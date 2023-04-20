@@ -7,6 +7,8 @@ use Phalcon\Mvc\Application;
 use Phalcon\Url;
 use Phalcon\Db\Adapter\Pdo\Mysql;
 use Phalcon\Config;
+use Phalcon\Config\ConfigFactory;
+
 
 $config = new Config([]);
 
@@ -21,6 +23,7 @@ $loader->registerDirs(
     [
         APP_PATH . "/controllers/",
         APP_PATH . "/models/",
+        APP_PATH . "/etc/",
     ]
 );
 
@@ -48,7 +51,20 @@ $container->set(
 
 $application = new Application($container);
 
-
+$container->set(
+    'db',
+    function () {
+     return new Mysql($this['config']->db->toArray());
+    }
+);
+$container->set(
+    'config',
+    function () {
+        $fileName='../app/etc/config.php';
+        $factory= new ConfigFactory();
+        return $config=$factory->newInstance('php', $fileName);
+    }
+);
 
 $container->set(
     'db',
