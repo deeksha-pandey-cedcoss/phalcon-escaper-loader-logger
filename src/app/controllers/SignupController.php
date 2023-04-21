@@ -5,7 +5,8 @@ use Phalcon\Mvc\Controller;
 class SignupController extends Controller
 {
 
-    public function IndexAction() {
+    public function IndexAction()
+    {
         // defalut action
         
     }
@@ -18,15 +19,28 @@ class SignupController extends Controller
             $this->request->getPost(),
             [
                 'name',
-                'email'
+                'email',
+                'password',
+                
             ]
         );
-        $success = $user->save();
+            $success = $user->save();
+        $this->session->set('name', $user->name);
+        $this->session->set('email', $user->email);
+        $this->session->set('password', $user->password);
+
+        if (isset($_POST['remember'])) {
+        $this->cookies->set('email', $this->session->get('email'), time() + 15 * 86400);
+        $this->cookies->set('pass', $this->session->get('password'), time() + 15 * 86400);
+        }
+
         $this->view->success = $success;
         if ($success) {
             $this->view->message = "Register succesfully";
         } else {
             $this->view->message = "Not Register due to following reason: <br>" . implode("<br>", $user->getMessages());
         }
+        $this->response->redirect('login/index');
     }
-}
+    }
+   

@@ -8,7 +8,10 @@ use Phalcon\Url;
 use Phalcon\Db\Adapter\Pdo\Mysql;
 use Phalcon\Config;
 use Phalcon\Config\ConfigFactory;
-
+use Phalcon\Session\Manager;
+use Phalcon\Session\Adapter\Stream;
+use Phalcon\Http\Response\Cookies;
+use time\Time;
 
 $config = new Config([]);
 
@@ -26,7 +29,13 @@ $loader->registerDirs(
         APP_PATH . "/etc/",
     ]
 );
-
+// registering namespace
+$loader->registerNamespaces(
+    [
+       'time' => APP_PATH . "/assets/",
+      
+    ]
+);
 $loader->register();
 
 $container = new FactoryDefault();
@@ -49,7 +58,7 @@ $container->set(
     }
 );
 
-$application = new Application($container);
+
 
 $container->set(
     'db',
@@ -65,19 +74,33 @@ $container->set(
         return $config=$factory->newInstance('php', $fileName);
     }
 );
-
-$container->set(
-    'db',
+$container->setShared(
+    'session',
     function () {
-        return new Mysql(
-            [
-                'host'     => 'mysql-server',
-                'username' => 'root',
-                'password' => 'secret',
-                'dbname'   => 'phalt',
-                ]
-            );
-        }
+        $session = new Manager();
+        $files = new Stream(
+    [
+        'savePath' => '/tmp',
+    ]
+);
+
+$session->setAdapter($files)->start();
+return $session;
+    }
+
+);
+$container->set('cookies', function () {
+    $cookies = new Cookies();
+
+    $cookies->useEncryption(false);
+
+    return $cookies;
+});
+$container->set(
+    'time',
+    function () {
+       return new Time();
+    }
 );
 
 $container->set(
@@ -90,6 +113,7 @@ $container->set(
     true
 );
 
+$application = new Application($container);
 try {
     // Handle the request
     $response = $application->handle(
