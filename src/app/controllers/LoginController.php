@@ -1,6 +1,7 @@
 <?php
 
 use Phalcon\Mvc\Controller;
+
 // login controller
 class LoginController extends Controller
 {
@@ -18,18 +19,19 @@ class LoginController extends Controller
         if ($this->cookies->has("email")) {
             $mail = $this->cookies->get("email");
             $pass = $this->cookies->get("pass");
-            $value_mail = $mail->getValue();
-            $value_pass = $pass->getValue();
+            
         }
-
-        $success = Users::findFirst(array("email = ?0", "bind" => array($email)));
-
+        $success = Users::findFirst(array("email = ?0,password = ?1, bind" => array($email,$password)));
         if ($success) {
             $this->view->message = "LOGIN SUCCESSFULLY";
+            $this->response->redirect('dashboard/');
         } else {
+            $this->logger
+            ->excludeAdapters['signup'];
+            $this->logger->info("Authentication Failed");
             $this->view->message = "Not Login succesfully ";
+
         }
 
-        $this->response->redirect('dashboard/index');
     }
 }

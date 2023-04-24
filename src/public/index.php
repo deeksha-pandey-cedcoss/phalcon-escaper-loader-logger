@@ -9,9 +9,13 @@ use Phalcon\Db\Adapter\Pdo\Mysql;
 use Phalcon\Config;
 use Phalcon\Config\ConfigFactory;
 use Phalcon\Session\Manager;
-use Phalcon\Session\Adapter\Stream;
 use Phalcon\Http\Response\Cookies;
 use time\Time;
+use Phalcon\Logger;
+use Phalcon\Session\Adapter\Stream;
+
+
+
 
 $config = new Config([]);
 
@@ -32,10 +36,15 @@ $loader->registerDirs(
 // registering namespace
 $loader->registerNamespaces(
     [
-       'time' => APP_PATH . "/assets/",
-      
+        'time' => APP_PATH . "/assets/",
+
+
     ]
 );
+$loader->registerClasses([
+    'Myescaper' => APP_PATH . '/component/Myescaper.php',
+]);
+
 $loader->register();
 
 $container = new FactoryDefault();
@@ -63,15 +72,15 @@ $container->set(
 $container->set(
     'db',
     function () {
-     return new Mysql($this['config']->db->toArray());
+        return new Mysql($this['config']->db->toArray());
     }
 );
 $container->set(
     'config',
     function () {
-        $fileName='../app/etc/config.php';
-        $factory= new ConfigFactory();
-        return $config=$factory->newInstance('php', $fileName);
+        $fileName = '../app/etc/config.php';
+        $factory = new ConfigFactory();
+        return $config = $factory->newInstance('php', $fileName);
     }
 );
 $container->setShared(
@@ -79,27 +88,43 @@ $container->setShared(
     function () {
         $session = new Manager();
         $files = new Stream(
-    [
-        'savePath' => '/tmp',
-    ]
-);
+            [
+                'savePath' => '/tmp',
+            ]
+        );
 
-$session->setAdapter($files)->start();
-return $session;
+        $session->setAdapter($files)->start();
+        return $session;
     }
 
 );
 $container->set('cookies', function () {
     $cookies = new Cookies();
-
     $cookies->useEncryption(false);
-
     return $cookies;
 });
 $container->set(
     'time',
     function () {
-       return new Time();
+        return new Time();
+    }
+);
+
+$container->set(
+    'logger',
+    function () {
+
+        $adapter1 = new Phalcon\Logger\Adapter\Stream(APP_PATH . '/storage/logs/login.log');
+        $adapter2 = new Phalcon\Logger\Adapter\Stream(APP_PATH . '/storage/logs/signup.log');
+        $logger =   new Logger(
+            'messages',
+            [
+                'login' => $adapter1,
+                'signup' => $adapter2,
+            ]
+        );
+
+        return $logger;
     }
 );
 
